@@ -19,12 +19,9 @@ FAST2SMS_API_KEY = ""
 
 # MySQL कनेक्शन फंक्शन
 def get_db_connection():
-    return mysql.connector.connect(
-        host="localhost",
-        user="root",
-        password="sayali12",  
-        database="hotel_db"
-    )
+    # कंसात तुमची कॉपी केलेली External Database URL पेस्ट करा
+    return psycopg2.connect("postgresql://sayali:u0kUJTS50eemxo7glriLkVEsZwPd7zZs@dpg-d98c0qjeo5us73d9c6g0-a.singapore-postgres.render.com/hotel_db_vrr4ा")
+
 
 # क्यूआर कोड जनरेटर
 def generate_qr_base64(data):
