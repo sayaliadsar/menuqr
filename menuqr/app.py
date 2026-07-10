@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for, session, make_response
-import mysql.connector
+import psycopg2
 import qrcode
 import io
 import base64
