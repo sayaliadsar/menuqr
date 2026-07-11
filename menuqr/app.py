@@ -41,8 +41,8 @@ def generate_qr_base64(data):
 # २. सुरुवातीचे लॉगिन पेज काढून थेट डॅशबोर्डवर पाठवणे
 @app.route('/', methods=['GET', 'POST'])
 def login():
-    # लॉगिन पेज न दाखवता थेट डॅशबोर्डवर रिडायरेक्ट करणे
-    return redirect(url_for('dashboard'))
+    # url_for ऐवजी थेट '/dashboard' या स्ट्रिंग पाथचा वापर करा
+    return redirect('/dashboard')
 
 @app.route('/dashboard')
 def dashboard():
