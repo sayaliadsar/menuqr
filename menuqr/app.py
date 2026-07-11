@@ -10,7 +10,11 @@ import requests  # SMS पाठवण्यासाठी
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 
-app = Flask(__name__)
+import os
+
+# जुनी ओळ बदलून हा पाथ सेट करा:
+app = Flask(__name__, template_folder=os.path.join(os.path.dirname(__file__), 'templates'))
+
 # 🔐 सेशन सुरक्षित ठेवण्यासाठी गुप्त की (Secret Key) चेंज करा
 app.secret_key = 'hotel-taj-super-secret-key-9876'
 
