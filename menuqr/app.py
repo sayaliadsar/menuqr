@@ -277,24 +277,75 @@ def complete_order(order_id):
 # Varil juna badal kadha ani direct ha code shevti taka:
 
 if __name__ == '__main__':
-    # Ha code automatic check karel ani table nsil tar banvun deyeel
     try:
         with db_connection.cursor() as cur:
-            # Tithe tumcha table banvnya cha query liha, jas ki:
+            # 1. Admin Table
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS admin (
+                    id SERIAL PRIMARY KEY,
+                    username VARCHAR(100) NOT NULL,
+                    password VARCHAR(255) NOT NULL
+                );
+            """)
+
+            # 2. Hotel Tables (Tumche tables ani QR sathi)
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS hotel_tables (
+                    id SERIAL PRIMARY KEY,
+                    table_number VARCHAR(50) NOT NULL,
+                    status VARCHAR(50) DEFAULT 'Available'
+                );
+            """)
+
+            # 3. Menu Table (Menu card items)
             cur.execute("""
                 CREATE TABLE IF NOT EXISTS menu (
                     id SERIAL PRIMARY KEY,
-                    item_name VARCHAR(100) NOT NULL,
+                    item_name VARCHAR(150) NOT NULL,
+                    price DECIMAL(10,2) NOT NULL,
+                    category VARCHAR(100),
+                    image_url TEXT,
+                    is_available BOOLEAN DEFAULT TRUE
+                );
+            """)
+
+            # 4. Orders Table
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS orders (
+                    id SERIAL PRIMARY KEY,
+                    table_id INT REFERENCES hotel_tables(id) ON DELETE SET NULL,
+                    total_amount DECIMAL(10,2) NOT NULL,
+                    status VARCHAR(50) DEFAULT 'Pending',
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                );
+            """)
+
+            # 5. Order Items Table (Kontya order madhe kay item ahe)
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS order_items (
+                    id SERIAL PRIMARY KEY,
+                    order_id INT REFERENCES orders(id) ON DELETE CASCADE,
+                    menu_id INT REFERENCES menu(id) ON DELETE SET NULL,
+                    quantity INT NOT NULL,
                     price DECIMAL(10,2) NOT NULL
                 );
             """)
+
+            # 6. Feedback Table
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS feedback (
+                    id SERIAL PRIMARY KEY,
+                    customer_name VARCHAR(100),
+                    rating INT,
+                    comments TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                );
+            """)
+            
             db_connection.commit()
-            print("Tables checked/created successfully!")
+            print("Sagle 6 tables Render var automatic tayar zale! 🎉")
+            
     except Exception as e:
-        print("Table creation error:", e)
+        print("Table banavtana error aali:", e)
 
     app.run(debug=True)
-
-
-
-
