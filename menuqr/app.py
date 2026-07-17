@@ -15,11 +15,11 @@ import mysql.connector  # kiwa import pymysql
 
 # Render chya server varun details automatic load hotiel
 db_connection = mysql.connector.connect(
-    host=os.environ.get("DB_HOST"),
-    user=os.environ.get("DB_USER"),
-    password=os.environ.get("DB_PASSWORD"),
-    database=os.environ.get("DB_NAME"),
-    port=int(os.environ.get("DB_PORT", 3306))
+    host=os.environ.get("dpg-d98c0qjeo5us73d9c6g0-a"),
+    user=os.environ.get("sayali"),
+    password=os.environ.get("u0kUJTS50eemxo7glriLkVEsZwPd7zZs"),
+    database=os.environ.get("hotel_db_vrr4"),
+    port=int(os.environ.get("DB_PORT", 5432))
 )
 
 cursor = db_connection.cursor()
