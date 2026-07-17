@@ -276,53 +276,7 @@ def complete_order(order_id):
         return redirect ('/chef')
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
-from flask import Flask, render_template, request, redirect, url_for, session, make_response
-import psycopg2  # आपण mysql ऐवजी हे वापरत आहोत
-# ... बाकीचे सर्व imports ...
 
-app = Flask(__name__)
-app.secret_key = 'hotel-taj-super-secret-key-9876'
-
-# १. तुमचे डेटाबेस कनेक्शन फंक्शन
-def get_db_connection():
-    return psycopg2.connect("तुमची_EXTERNAL_DATABASE_URL_इथे_पेस्ट_करा")
-
-# २. हा नवीन ऑटोमॅटिक टेबल बनवण्याचा कोड इथेच टाका 👇
-def create_tables_automatically():
-    try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        
-        # १. युजर्स टेबल
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS users (
-                id SERIAL PRIMARY KEY,
-                name VARCHAR(100) NOT NULL,
-                email VARCHAR(100) UNIQUE NOT NULL,
-                password VARCHAR(255) NOT NULL,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            );
-        """)
-        
-        # २. मेनू आयटम्स टेबल
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS menu_items (
-                id SERIAL PRIMARY KEY,
-                name VARCHAR(100) NOT NULL,
-                price NUMERIC(10, 2) NOT NULL,
-                description TEXT,
-                available BOOLEAN DEFAULT TRUE
-            );
-        """)
-        
-        conn.commit()
-        cursor.close()
-        conn.close()
-        print("✅ सर्व टेबल्स यशस्वीरित्या तयार झाले आहेत!")
-    except Exception as e:
-        print(f"❌ टेबल तयार करताना एरर आला: {e}")
-
-# या फंक्शनला इथेच कॉल (Call) करा
 create_tables_automatically()
 
 
