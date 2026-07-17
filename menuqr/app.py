@@ -11,20 +11,18 @@ from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 
 import os
+import mysql.connector  # kiwa import pymysql
 
-# जुनी ओळ बदलून हा पाथ सेट करा:
-app = Flask(__name__, template_folder=os.path.join(os.path.dirname(__file__), 'templates'))
+# Render chya server varun details automatic load hotiel
+db_connection = mysql.connector.connect(
+    host=os.environ.get("DB_HOST"),
+    user=os.environ.get("DB_USER"),
+    password=os.environ.get("DB_PASSWORD"),
+    database=os.environ.get("DB_NAME"),
+    port=int(os.environ.get("DB_PORT", 3306))
+)
 
-# 🔐 सेशन सुरक्षित ठेवण्यासाठी गुप्त की (Secret Key) चेंज करा
-app.secret_key = 'hotel-taj-super-secret-key-9876'
-
-# ⚠️ तुमच्या Fast2SMS चा API Key इथे सुरक्षित पेस्ट करा
-FAST2SMS_API_KEY = ""
-
-# MySQL कनेक्शन फंक्शन
-def get_db_connection():
-    # कंसात तुमची कॉपी केलेली External Database URL पेस्ट करा
-    return psycopg2.connect("postgresql://sayali:u0kUJTS50eemxo7glriLkVEsZwPd7zZs@dpg-d98c0qjeo5us73d9c6g0-a.singapore-postgres.render.com/hotel_db_vrr4ा")
+cursor = db_connection.cursor()
 
 
 # क्यूआर कोड जनरेटर
