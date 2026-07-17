@@ -274,11 +274,28 @@ def complete_order(order_id):
         cursor.close()
         db.close()
         return redirect ('/chef')
+# Varil juna badal kadha ani direct ha code shevti taka:
+
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    # Ha code automatic check karel ani table nsil tar banvun deyeel
+    try:
+        with db_connection.cursor() as cur:
+            # Tithe tumcha table banvnya cha query liha, jas ki:
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS menu (
+                    id SERIAL PRIMARY KEY,
+                    item_name VARCHAR(100) NOT NULL,
+                    price DECIMAL(10,2) NOT NULL
+                );
+            """)
+            db_connection.commit()
+            print("Tables checked/created successfully!")
+    except Exception as e:
+        print("Table creation error:", e)
 
-create_tables_automatically()
+    app.run(debug=True)
 
 
-# ३. याच्या खाली तुमचा बाकीचा जुना कोड (उदा. @app.route('/') वगैरे) जसाच्या तसा राहू द्या
+
+ा
 
