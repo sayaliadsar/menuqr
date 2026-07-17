@@ -1,31 +1,26 @@
 from flask import Flask, render_template, request, redirect, url_for, session, make_response
 import psycopg2
+from psycopg2.extras import RealDictCursor
 import qrcode
 import io
 import base64
 from datetime import datetime
-import requests  # SMS पाठवण्यासाठी
-
+import requests # SMS पाठवण्यासाठी 
 # PDF जनरेशनसाठी
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
-
 import os
-import mysql.connector  # kiwa import pymysql
 
-# Render chya server varun details automatic load hotiel
-db_connection = mysql.connector.connect(
-    host=os.environ.get("dpg-d98c0qjeo5us73d9c6g0-a"),
-    user=os.environ.get("sayali"),
-    password=os.environ.get("u0kUJTS50eemxo7glriLkVEsZwPd7zZs"),
-    database=os.environ.get("hotel_db_vrr4"),
-    port=int(os.environ.get("DB_PORT", 5432))
-)
+app = Flask(__name__)
 
-cursor = db_connection.cursor()
+# Render वरून DATABASE_URL ऑटोमॅटिक लोड होईल
+DATABASE_URL = os.environ.get('DATABASE_URL')
 
+# PostgreSQL डेटाबेसशी कनेक्ट करण्याचा कोड
+db_connection = psycopg2.connect(DATABASE_URL)
+cursor = db_connection.cursor(cursor_factory=RealDictCursor)
 
-# क्यूआर कोड जनरेटर
+# क्यूआर कोड जनरेटर 
 def generate_qr_base64(data):
     qr = qrcode.QRCode(version=1, box_size=10, border=5)
     qr.add_data(data)
@@ -35,6 +30,7 @@ def generate_qr_base64(data):
     img.save(buf, format='PNG')
     buf.seek(0)
     return f"data:image/png;base64,{base64.b64encode(buf.getvalue()).decode('utf-8')}"
+
 
 # २. सुरुवातीचे लॉगिन पेज काढून थेट डॅशबोर्डवर पाठवणे
 @app.route('/', methods=['GET', 'POST'])
