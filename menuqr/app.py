@@ -15,6 +15,29 @@ app = Flask(__name__)
 
 # Render वरून DATABASE_URL ऑटोमॅटिक लोड होईल
 DATABASE_URL = os.environ.get('DATABASE_URL')
+            # 1. Sabse pehle check karenge ki hotel_tables table khali hai kya
+            cur.execute("SELECT COUNT(*) FROM hotel_tables;")
+            if cur.fetchone()['count'] == 0:
+                # Agar table khali hai, toh Table No 1 aur 2 automatic insert ho jayenge
+                cur.execute("""
+                    INSERT INTO hotel_tables (table_number, status) VALUES 
+                    ('Table 1', 'Available'),
+                    ('Table 2', 'Available');
+                """)
+                print("Table 1 aur Table 2 successfully insert ho gaye! 🪑")
+
+            # 2. Ab check karenge ki Menu card table khali hai kya
+            cur.execute("SELECT COUNT(*) FROM menu;")
+            if cur.fetchone()['count'] == 0:
+                # Agar menu table khali hai, toh Veg aur Non-Veg items insert ho jayenge
+                cur.execute("""
+                    INSERT INTO menu (item_name, price, category, is_available) VALUES 
+                    ('Paneer Tikka', 160.00, 'Veg', TRUE),
+                    ('Veg Kolhapuri', 140.00, 'Veg', TRUE),
+                    ('Chicken Masala', 220.00, 'Non-Veg', TRUE),
+                    ('Jeera Rice', 90.00, 'Veg', TRUE);
+                """)
+                print("Menu Card ke items successfully insert ho gaye! 🍔")
 
 # PostgreSQL डेटाबेसशी कनेक्ट करण्याचा कोड
 db_connection = psycopg2.connect(DATABASE_URL)
