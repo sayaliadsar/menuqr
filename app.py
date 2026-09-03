@@ -20,7 +20,7 @@ FAST2SMS_API_KEY = ""
 
 
 def get_db_connection():
-    supabase_url = "postgresql://postgres:तुमचा_पासवर्ड@db.xrbmwpbctnrrwnbigded.supabase.co:5432/postgres"
+    supabase_url = "postgresql://postgres:sayali27rutuja5@db.xrbmwpbctnrrwnbigded.supabase.co:5432/postgres"
     database_url = os.environ.get('DATABASE_URL', supabase_url)
     return psycopg2.connect(database_url)
 
