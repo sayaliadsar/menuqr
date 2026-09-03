@@ -20,11 +20,14 @@ FAST2SMS_API_KEY = ""
 
 
 def get_db_connection():
-    supabase_url = "postgresql://postgres:sayali27rutuja5@db.xrbmwpbctnrrwnbigded.supabase.co:5432/postgres"
-    database_url = os.environ.get('DATABASE_URL', supabase_url)
+    database_url = os.environ.get('postgresql://postgres.xrbmwpbctnrrwnbigded:[sayali27rutuja5]@aws-0-ap-south-1.pooler.supabase.com:6543/postgres
+')
+    
+    # जर Environment Variable सेट नसेल तर एरर टाळण्यासाठी चेकिंग
+    if not database_url:
+        raise ValueError("DATABASE_URL variable Render वर सेट केलेले नाही!")
+        
     return psycopg2.connect(database_url)
-
-
 def generate_qr_base64(data):
     qr = qrcode.QRCode(version=1, box_size=10, border=5)
     qr.add_data(data)
