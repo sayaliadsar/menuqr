@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for, session, make_response
-import mysql.connector
+import psycopg2 
 import qrcode
 import io
 import base64
@@ -19,12 +19,9 @@ FAST2SMS_API_KEY = ""
 
 
 def get_db_connection():
-    return mysql.connector.connect(
-        host="localhost",
-        user="root",
-        password="sayali12",  
-        database="hotel_db"
-    )
+    supabase_url = "postgresql://postgres:तुमचा_पासवर्ड@db.xrbmwpbctnrrwnbigded.supabase.co:5432/postgres"
+    database_url = os.environ.get('DATABASE_URL', supabase_url)
+    return psycopg2.connect(database_url)
 
 
 def generate_qr_base64(data):
