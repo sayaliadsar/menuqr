@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, session, make_response
 import psycopg2 
 import qrcode
+import os
 import io
 import base64
 from datetime import datetime
