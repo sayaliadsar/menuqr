@@ -20,8 +20,7 @@ FAST2SMS_API_KEY = ""
 
 
 def get_db_connection():
-    database_url = os.environ.get('postgresql://postgres.xrbmwpbctnrrwnbigded:[sayali27rutuja5]@aws-0-ap-south-1.pooler.supabase.com:6543/postgres
-')
+    database_url = os.environ.get('postgresql://postgres.xrbmwpbctnrrwnbigded:[YOUR-PASSWORD]@aws-0-ap-south-1.pooler.supabase.com:6543/postgres')
     
     # जर Environment Variable सेट नसेल तर एरर टाळण्यासाठी चेकिंग
     if not database_url:
