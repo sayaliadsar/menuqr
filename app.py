@@ -1,31 +1,25 @@
-import os 
-from flask import Flask, render_template, request, redirect, url_for, session, make_response
-import psycopg2 
-import qrcode
+import os
 import io
 import base64
 from datetime import datetime
-import requests 
-
-
+import requests
+from flask import Flask, render_template, request, redirect, url_for, session, make_response
+import psycopg2
+from psycopg2.extras import RealDictCursor
+import qrcode
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 
 app = Flask(__name__)
-
 app.secret_key = 'hotel-taj-super-secret-key-9876'
-
-
 FAST2SMS_API_KEY = ""
 
 def get_db_connection():
-    # Render च्या Environment Variables मधून DATABASE_URL आपोआप लोड होईल
     database_url = os.environ.get('DATABASE_URL')
-    
     if not database_url:
         raise ValueError("DATABASE_URL variable Render वर सेट केलेले नाही!")
-        
     return psycopg2.connect(database_url)
+
 def generate_qr_base64(data):
     qr = qrcode.QRCode(version=1, box_size=10, border=5)
     qr.add_data(data)
@@ -36,10 +30,8 @@ def generate_qr_base64(data):
     buf.seek(0)
     return f"data:image/png;base64,{base64.b64encode(buf.getvalue()).decode('utf-8')}"
 
-
 @app.route('/', methods=['GET', 'POST'])
 def login():
-    
     return redirect(url_for('dashboard'))
 
 @app.route('/dashboard')
@@ -52,20 +44,19 @@ def show_qr(table_id):
     qr_image = generate_qr_base64(menu_url)
     return render_template('qr_page.html', table_id=table_id, menu_url=menu_url, qr_image=qr_image)
 
-
 @app.route('/menu/<int:table_id>')
 def menu(table_id):
     session['table_id'] = table_id
     if 'cart' not in session:
         session['cart'] = {}
-
+    
     db = get_db_connection()
-    cursor = db.cursor(dictionary=True)
+    cursor = db.cursor(cursor_factory=RealDictCursor)
     cursor.execute("SELECT * FROM menu")
     all_items = cursor.fetchall()
     cursor.close()
     db.close()
-
+    
     clean_cart = {str(k): int(v) for k, v in session['cart'].items()}
     return render_template('menu.html', menu_items=all_items, table_id=table_id, cart=clean_cart)
 
@@ -99,24 +90,26 @@ def view_cart():
     table_id = session.get('table_id', 1)
     cart_items = []
     total = 0
-
     if cart:
         db = get_db_connection()
-        cursor = db.cursor(dictionary=True)
+        cursor = db.cursor(cursor_factory=RealDictCursor)
         for item_id_str, qty in cart.items():
             cursor.execute("SELECT * FROM menu WHERE id = %s", (int(item_id_str),))
             item = cursor.fetchone()
             if item:
                 item_total = item['price'] * qty
                 cart_items.append({
-                    'id': item['id'], 'name': item['name'], 'qty': qty,
-                    'price': item['price'], 'total': item_total, 'icon': item['icon']
+                    'id': item['id'],
+                    'name': item['name'],
+                    'qty': qty,
+                    'price': item['price'],
+                    'total': item_total,
+                    'icon': item['icon']
                 })
                 total += item_total
         cursor.close()
         db.close()
     return render_template('cart.html', cart_items=cart_items, total=total, table_id=table_id)
-
 
 @app.route('/place_order', methods=['POST'])
 def place_order():
@@ -124,12 +117,12 @@ def place_order():
     table_no = session.get('table_id', 1)
     if not cart:
         return redirect(url_for('view_cart'))
-
+    
     customer_name = request.form.get('customer_name', 'Guest').strip()
     mobile = request.form.get('mobile', '').strip()
-
+    
     db = get_db_connection()
-    cursor = db.cursor(dictionary=True)
+    cursor = db.cursor(cursor_factory=RealDictCursor)
     
     total = 0
     cart_items = []
@@ -139,35 +132,38 @@ def place_order():
         if item:
             total += item['price'] * qty
             cart_items.append((item['id'], qty, item['price']))
-
-  
-    cursor.execute("INSERT INTO orders (table_no, customer_name, mobile, total, status) VALUES (%s, %s, %s, %s, 'Pending')", 
-                   (table_no, customer_name, mobile, total))
-    order_id = cursor.lastrowid
-
+            
+    # PostgreSQL मध्ये RETURNING order_id वापरले जाते
+    cursor.execute(
+        "INSERT INTO orders (table_no, customer_name, mobile, total, status) VALUES (%s, %s, %s, %s, 'Pending') RETURNING order_id",
+        (table_no, customer_name, mobile, total)
+    )
+    order_id = cursor.fetchone()['order_id']
+    
     for menu_id, quantity, price in cart_items:
-        cursor.execute("INSERT INTO order_items (order_id, menu_id, quantity, price) VALUES (%s, %s, %s, %s)", 
-                       (order_id, menu_id, quantity, price))
-
+        cursor.execute(
+            "INSERT INTO order_items (order_id, menu_id, quantity, price) VALUES (%s, %s, %s, %s)",
+            (order_id, menu_id, quantity, price)
+        )
+        
     db.commit()
     cursor.close()
     db.close()
+    
     session.pop('cart', None)
     return render_template('order_success.html', order_id=order_id, total=total, table_no=table_no)
 
-# पीडीएफ बिल डाउनलोड
 @app.route('/download_pdf/<int:order_id>')
 def download_pdf(order_id):
     db = get_db_connection()
-    cursor = db.cursor(dictionary=True)
+    cursor = db.cursor(cursor_factory=RealDictCursor)
     cursor.execute("SELECT * FROM orders WHERE order_id = %s", (order_id,))
     order = cursor.fetchone()
-    
     cursor.execute("SELECT oi.*, m.name AS item_name FROM order_items oi JOIN menu m ON oi.menu_id = m.id WHERE oi.order_id = %s", (order_id,))
     items = cursor.fetchall()
     cursor.close()
     db.close()
-
+    
     buffer = io.BytesIO()
     p = canvas.Canvas(buffer, pagesize=letter)
     p.setFont("Helvetica-Bold", 20)
@@ -185,6 +181,7 @@ def download_pdf(order_id):
     p.drawString(100, y-20, f"Grand Total: Rs. {order['total']}")
     p.showPage()
     p.save()
+    
     buffer.seek(0)
     response = make_response(buffer.getvalue())
     response.headers['Content-Type'] = 'application/pdf'
@@ -198,7 +195,6 @@ def admin():
 def admin_login():
     username = request.form.get('username')
     password = request.form.get('password')
-    
     if username == "admin" and password == "1234":
         session['admin'] = True
         return redirect('/chef')
@@ -209,45 +205,43 @@ def logout():
     session.pop('admin', None)
     return redirect('/admin')
 
-
 @app.route('/chef')
 def chef():
     if not session.get('admin'):
         return redirect('/admin')
-
+    
     db = get_db_connection()
-    cursor = db.cursor(dictionary=True)
-
+    cursor = db.cursor(cursor_factory=RealDictCursor)
+    
     cursor.execute("SELECT * FROM orders WHERE status='Pending' ORDER BY order_time DESC")
     pending_orders = cursor.fetchall()
     for order in pending_orders:
         cursor.execute("SELECT oi.*, m.name AS item_name FROM order_items oi JOIN menu m ON oi.menu_id = m.id WHERE oi.order_id=%s", (order['order_id'],))
         order['order_foods'] = cursor.fetchall()
-
+        
     cursor.execute("SELECT * FROM orders ORDER BY order_time DESC")
     all_history = cursor.fetchall()
-
-    cursor.execute("SELECT IFNULL(SUM(total),0) AS total_sales FROM orders WHERE DATE(order_time)=CURDATE()")
+    
+    # PostgreSQL मधील सुसंगत क्वेरीज
+    cursor.execute("SELECT COALESCE(SUM(total), 0) AS total_sales FROM orders WHERE order_time::date = CURRENT_DATE")
     today_sales = cursor.fetchone()['total_sales']
-
-    cursor.execute("SELECT COUNT(*) AS total_orders FROM orders WHERE DATE(order_time)=CURDATE()")
+    
+    cursor.execute("SELECT COUNT(*) AS total_orders FROM orders WHERE order_time::date = CURRENT_DATE")
     total_orders = cursor.fetchone()['total_orders']
-
-    cursor.execute("SELECT m.name, SUM(oi.quantity) AS total_qty, m.icon FROM order_items oi JOIN menu m ON oi.menu_id = m.id GROUP BY oi.menu_id ORDER BY total_qty DESC LIMIT 5")
+    
+    cursor.execute("SELECT m.name, SUM(oi.quantity) AS total_qty, m.icon FROM order_items oi JOIN menu m ON oi.menu_id = m.id GROUP BY m.name, m.icon ORDER BY total_qty DESC LIMIT 5")
     most_ordered = cursor.fetchall()
-
+    
     cursor.close()
     db.close()
     return render_template("chef.html", orders=pending_orders, all_history=all_history, today_sales=today_sales, total_orders=total_orders, most_ordered=most_ordered)
 
-
 @app.route('/complete_order/<int:order_id>', methods=['POST'])
 def complete_order(order_id):
     db = get_db_connection()
-    cursor = db.cursor(dictionary=True)
+    cursor = db.cursor(cursor_factory=RealDictCursor)
     cursor.execute("UPDATE orders SET status='Completed' WHERE order_id=%s", (order_id,))
     db.commit()
-    
     cursor.execute("SELECT * FROM orders WHERE order_id=%s", (order_id,))
     order_data = cursor.fetchone()
     cursor.close()
@@ -255,7 +249,6 @@ def complete_order(order_id):
     
     customer_mobile = order_data['mobile']
     customer_name = order_data['customer_name']
-    
     if customer_mobile and len(customer_mobile) == 10:
         message_text = f"Hello {customer_name}, Hotel Taj madhe tumchi Order #{order_id} accept zali ahe ani jevan tayar hot ahe! 🍳"
         url = "https://fast2sms.com"
@@ -266,18 +259,20 @@ def complete_order(order_id):
             print("Fast2SMS Response:", response.json())
         except Exception as e:
             print("SMS Error:", e)
-            return redirect('/chef')
-        @app.route('/delete_order/int:order_id', methods=['POST'] )
-        def delete_order(order_id):
-         if not session.get('admin'):
-          return redirect('/admin')
-        db = get_db_connection()
-        cursor = db.cursor()
-        cursor.execute("DELETE FROM orders WHERE order_id = %s", (order_id,))
-        db.commit()
-        cursor.close()
-        db.close()
-        return redirect ('/chef')
+            
+    return redirect('/chef')
+
+@app.route('/delete_order/<int:order_id>', methods=['POST'])
+def delete_order(order_id):
+    if not session.get('admin'):
+        return redirect('/admin')
+    db = get_db_connection()
+    cursor = db.cursor()
+    cursor.execute("DELETE FROM orders WHERE order_id = %s", (order_id,))
+    db.commit()
+    cursor.close()
+    db.close()
+    return redirect('/chef')
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
-
