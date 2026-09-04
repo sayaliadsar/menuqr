@@ -18,11 +18,10 @@ app.secret_key = 'hotel-taj-super-secret-key-9876'
 
 FAST2SMS_API_KEY = ""
 
-
 def get_db_connection():
+    # Render च्या Environment Variables मधून DATABASE_URL आपोआप लोड होईल
     database_url = os.environ.get('DATABASE_URL')
     
-    # जर Environment Variable सेट नसेल तर एरर टाळण्यासाठी चेकिंग
     if not database_url:
         raise ValueError("DATABASE_URL variable Render वर सेट केलेले नाही!")
         
